@@ -1,6 +1,6 @@
 /*
   LoRa Client w/ sensor for Arduino :
-  Support Devices: LoRa Shield + Arduino + DHT11 + Sensor Ultrassonico + Sensor de Chama 
+  Support Devices: LoRa Shield + Arduino + DHT11 + Sensor Ultrassonico + Sensor de Chama + Sensor de Luminosidade
   
   Example sketch showing how to create a messageing client, 
   with the RH_RF95 class. RH_RF95 class does not provide for addressing or
@@ -24,6 +24,8 @@
 #include "DHT.h"
 #define DHTPIN  A0 //pino utilizado no esp
 #define DHTTYPE DHT11   // DHT 11
+//Cte sensor Luminosidade
+#define LIGHTPIN A2
 
 // defines variaveis sensor distancia
 long duration; // variable for the duration of sound wave travel
@@ -34,9 +36,10 @@ int pino_A0 = A1;
 int valor_a = 0;
 int valor_d = 0;
 int chama = 0;
-float temp,humid;
-char tem_1[8]={"\0"},hum_1[8]={"\0"},dis_1[8]={"\0"},cha_1[4]={"\0"};
-char *node_id = "<12345>"; //From LG01 via web Local Channel settings on MQTT.Please refer <> dataformat in here.
+int deviceId = 111;
+float temp,humid,luz;
+char tem_1[8]={"\0"},hum_1[8]={"\0"},luz_1[8]={"\0"},dis_1[8]={"\0"},cha_1[4]={"\0"},deviceId_1[6] = {"\0"};
+char *node_id = "<16a>"; //From LG01 via web Local Channel settings on MQTT.Please refer <> dataformat in here.
 uint8_t datasend[70];
 unsigned int count = 1;
 
@@ -123,12 +126,12 @@ void Ultrassom()
   // Reads the echoPin, returns the sound wave travel time in microseconds
   duration = pulseIn(echoPin, HIGH);
   // Calculating the distance
-  distance = duration * 0.034 / (2*10); // Speed of sound wave divided by 2 (go and back)
+  distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
   // Displays the distance on the Serial Monitor
   Serial.print("Distance: ");
   Serial.print(distance); //Valor em centimetros que iremos enviar para a Dojot
   //Serial.println(" cm");    
-  delay(500);
+  delay(1000);
 }
 
 void is_chama()
@@ -147,6 +150,13 @@ void is_chama()
   delay(500);
 }
 
+void valor_luz(){
+  luz = analogRead(LIGHTPIN);
+  // Serial.println(F("valor luz: "));
+  // Serial.print(luz);
+  delay(500);
+}
+
 void sensorWrite()
 {
     char data[70] = "\0";
@@ -158,23 +168,39 @@ void sensorWrite()
     dtostrf(temp,0,1,tem_1);
     dtostrf(humid,0,1,hum_1);
     dtostrf(distance,0,1,dis_1);
+    dtostrf(luz,0,1,luz_1);
     //dtostrf(valor_d,0,1,cha_1);
-    itoa(valor_d,cha_1,4);
-    //tmp, umd, xma, rssi,sonic
-    Serial.println("debugInicial:");
-    Serial.println(tem_1);
-    Serial.println(hum_1);
-    Serial.println(dis_1);
-    Serial.println(cha_1);
-     strcat(data,"{\"tmp\":");
+    itoa(valor_d,cha_1,10);
+    itoa(deviceId,deviceId_1,10);
+    /*tmp, umd, xma, sonic
+     * pd -> payload
+    * i -> id da dojot
+    * t -> temperatura
+    * u -> umidade
+    * x -> chama
+    * s -> ultrassom
+    * l -> luminosidade
+    */
+    //Serial.println("debugInicial:");
+    //Serial.println(tem_1);
+    //Serial.println(hum_1);
+    //Serial.println(dis_1);
+    //Serial.println(cha_1);
+    //Serial.println(luz_1);
+     strcat(data,"{\"pld\":");
+     strcat(data,"{\"i\":");
+     strcat(data,deviceId_1);
+     strcat(data,",\"t\":");
      strcat(data,tem_1);
-     strcat(data,",\"umd\":");
+     strcat(data,",\"u\":");
      strcat(data,hum_1);
-     strcat(data,",\"xma\":");
+     strcat(data,",\"x\":");
      strcat(data,cha_1);
-     strcat(data,",\"sonic\":");
+     strcat(data,",\"s\":");
      strcat(data,dis_1);
-     strcat(data,"}");
+     strcat(data,",\"l\":");
+     strcat(data,luz_1);
+     strcat(data,"}}");
      strcpy((char *)datasend,data);
      
    Serial.println("debug pacote: ");
@@ -226,6 +252,7 @@ void loop()
   dhtTempHumid();
   is_chama();
   Ultrassom();
+  valor_luz();
   sensorWrite();
   SendData();
 }

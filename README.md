@@ -1,7 +1,10 @@
-# Registro de algumas atividades desenvolvidas para a comunicação Dojot
-O código aqui presente é referente aos hardwares desenvolvidos durante o período de Bolsa PIBIC e TCC do discente Felipe Vitor Souza dos Reis.
-Há código tanto para o Gateway utilizado (Dragino LG01) quanto para os endNodes (Arduino Uno + Shield LoRa + Sensores).
-> Para melhor organização dos códigos, esse repositório contará com versionamento para que esteja de fácil acesso as modificações necessárias para comunicação com as diferentes versões da dojot
-dojot ->
-+ https://github.com/dojot/dojot/tree/master
-[] mapeamento dos passos necessários dentro do GW, tanto em código quanto em interface para uso com a dojot;
+# Projeto de campus inteligente utilizando de equipamentos LoRa e da Plataforma Dojot
+Esse Repositório tem arquivos e explicações relacionadas ao desenvolvimento de uma comunicação ponta a ponta entre sensores instalados em um dado ambiente e a plataforma Dojot, ou seja, isso inclui explicações referente aos end-nodes com Shield Lora, ao Gateway LG01 e à plataforma Dojot.
+Esse repositório contém os seguintes diretórios:
++ End-Node
++ LG01
++ Plataforma Dojot
++ Comunicação Full
+> A ordem mais indicada para início de instalação desse ecossistema, seria começar pela instalação da plataforma Dojot, seguida pela configuração do Gateway e após realizar a configuração dos end-nodes
+
+Cada diretório nesse repositório contém um README com explicações básicas a cerca do conteúdo do diretório, o seu funcionamento no contexto da comunicação ponta-a-ponta, exemplos básicos para estabelecer teste de comunicação, códigos exemplo, além de algumas dicas de uso para um funcionamento mais prático de todo o sistema.
