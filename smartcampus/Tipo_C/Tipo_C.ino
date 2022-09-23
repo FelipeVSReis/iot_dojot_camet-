@@ -5,16 +5,15 @@
 
 //Variáveis
 
-int VIBRPIN = 0;
 int DHTPIN = 3;
-int LIGHTPIN = A0;
-int FLAMEPIN = A1;
-int SOLOHPIN = A2;
+int MQ135PIN = A0;
+int MQ9PIN = A1;
+int MQ4PIN = A2;
 
-int deviceId = 1;
-boolean vibracao;
-float temp,humid,luz,chama,soloUmi,vibra;
-char tem_1[8]={"\0"},hum_1[8]={"\0"},luz_1[8]={"\0"},chama_1[8]={"\0"},umidadeSolo_1[8]={"\0"},vibracao_1[8]={"\0"},deviceId_1[6] = {"\0"};
+//Tipo C id 5
+int deviceId = 5;
+float mq4,mq9,mq135,temp,umi;
+char tem_1[8]={"\0"},umi_1[8]={"\0"},mq4_1[8]={"\0"},mq9_1[8]={"\0"},mq135_1[8]={"\0"},deviceId_1[6] = {"\0"};
 char *node_id = "<16a>"; //From LG01 via web Local Channel settings on MQTT.Please refer <> dataformat in here.
 uint8_t datasend[80];
 unsigned int count = 1;
@@ -27,16 +26,17 @@ float frequency = 915.0;
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("MQ3 and MQ5 is warming up");
+  delay(120000);  //2 min warm up time
   //while (!Serial) ; // Wait for serial port to be available
   configPin();
   configLoRa();
   }
 
 void configPin(){
-  pinMode(LIGHTPIN, INPUT);
-  pinMode(FLAMEPIN, INPUT);
-  pinMode(SOLOHPIN, INPUT);
-  pinMode(VIBRPIN, INPUT);
+  pinMode(MQ4PIN, INPUT);
+  pinMode(MQ9PIN, INPUT);
+  pinMode(MQ135PIN, INPUT);
   pinMode(DHTPIN, INPUT);
   dht.begin();
   }
@@ -61,10 +61,9 @@ void configPin(){
 
 void loop() {
   dhtTempHumid();
-  valor_chama();
-  isVibration();
-  soloHSensor();
-  valor_luz();
+  valor_metano();
+  valor_CO();
+  valor_toxico();
   //Debug para visualizar dados coletados na porta serial;
   printSerial();
   //Manipulação dos dados coletados para envio via LoRa;
@@ -77,33 +76,27 @@ void loop() {
 void dhtTempHumid()
 {
   temp = dht.readTemperature();
-  humid = dht.readHumidity();
+  umi = dht.readHumidity();
   delay(3000);
 }
 
-void soloHSensor() 
+void valor_metano() 
 {
-  soloUmi= analogRead(SOLOHPIN);
-  soloUmi = map(soloUmi,550,0,0,100);
+  mq4= analogRead(MQ4PIN);
   delay(1000);
   }
 
-void valor_luz()
+void valor_CO()
 {
-  luz = analogRead(LIGHTPIN);  
+  mq9 = analogRead(MQ9PIN);  
   delay(1000);
 }
 
-void valor_chama()
+void valor_toxico()
 {
-  chama = analogRead(FLAMEPIN);
+  mq135 = analogRead(MQ135PIN);
   delay(1000);
   }
-void isVibration()
-{
-  vibracao = digitalRead(VIBRPIN);
-  delay(500);
-}
 
 void printSerial()
 {
@@ -117,25 +110,17 @@ void printSerial()
   Serial.print(temp);
   Serial.print("℃");
   Serial.print(",");
-  Serial.print(humid);
+  Serial.print(umi);
   Serial.print("%");
   Serial.print("]");
   Serial.println("");
-  Serial.print("Umidade do Solo : ");
-  Serial.print(soloUmi);
-  Serial.println("%");
-  Serial.print("valor luz: ");
-  Serial.println(luz);
-  Serial.print("valor chama: ");
-  Serial.println(chama);
-  if (vibracao == 1) {
-    vibra=1;
-    Serial.println("Vibracao: SIM ");
-  }else if(vibracao == 0){
-    vibra=0;
-    Serial.println("Vibracao: NÃO ");
+  Serial.print("Metano: ");
+  Serial.print(mq4);
+  Serial.print("CO: ");
+  Serial.println(mq9);
+  Serial.print("Gases Tóxicos: ");
+  Serial.println(mq135);
 }
-  }
 
 void sensorWrite()
 {
@@ -146,43 +131,30 @@ void sensorWrite()
        data[i] = node_id[i];
     }
     dtostrf(temp,0,1,tem_1);
-    dtostrf(humid,0,1,hum_1);
-    dtostrf(chama,0,1,chama_1);
-    dtostrf(luz,0,1,luz_1);
-    dtostrf(soloUmi,0,1,umidadeSolo_1);
-    itoa(vibra,vibracao_1,5);
+    dtostrf(umi,0,1,umi_1);
+    dtostrf(mq4,0,1,mq4_1);
+    dtostrf(mq9,0,1,mq9_1);
+    dtostrf(mq135,0,1,mq135_1);
     itoa(deviceId,deviceId_1,5);
-    /*tmp, umd, xma, sonic
-     * pld -> payload
-    * i -> id da dojot
-    * t -> temperatura
-    * u -> umidade
-    * x -> chama
-    * s -> ultrassom
-    * l -> luminosidade
-    */
     Serial.println("debugInicial:");
     Serial.println(tem_1);
-    Serial.println(hum_1);
-    Serial.println(chama_1);
-    Serial.println(vibracao_1);
-    Serial.println(umidadeSolo_1);
-    Serial.println(luz_1);
+    Serial.println(umi_1);
+    Serial.println(mq4_1);
+    Serial.println(mq9_1);
+    Serial.println(mq135_1);
      strcat(data,"{\"pld\":");
      strcat(data,"{\"i\":");
      strcat(data,deviceId_1);
      strcat(data,",\"t\":");
      strcat(data,tem_1);
      strcat(data,",\"u\":");
-     strcat(data,hum_1);
-     strcat(data,",\"f\":");
-     strcat(data,chama_1);
-     strcat(data,",\"v\":");
-     strcat(data,vibracao_1);
-     strcat(data,",\"o\":");
-     strcat(data,umidadeSolo_1);
-     strcat(data,",\"l\":");
-     strcat(data,luz_1);
+     strcat(data,umi_1);
+     strcat(data,",\"m\":");
+     strcat(data,mq_4);
+     strcat(data,",\"c\":");
+     strcat(data,mq9_1);
+     strcat(data,",\"x\":");
+     strcat(data,mq135_1);
      strcat(data,"}}");
      strcpy((char *)datasend,data);
      

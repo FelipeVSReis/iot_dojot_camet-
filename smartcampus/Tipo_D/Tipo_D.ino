@@ -5,16 +5,17 @@
 
 //Variáveis
 
-int VIBRPIN = 0;
+int PIRPIN = 4;
 int DHTPIN = 3;
-int LIGHTPIN = A0;
-int FLAMEPIN = A1;
-int SOLOHPIN = A2;
+int SOUNDPIN = A0;
+int LIGHTPIN = A1;
 
-int deviceId = 1;
-boolean vibracao;
-float temp,humid,luz,chama,soloUmi,vibra;
-char tem_1[8]={"\0"},hum_1[8]={"\0"},luz_1[8]={"\0"},chama_1[8]={"\0"},umidadeSolo_1[8]={"\0"},vibracao_1[8]={"\0"},deviceId_1[6] = {"\0"};
+
+
+//Tipo D id 7
+int deviceId = 7;
+float temp,humid,presenca,som,luz;
+char tem_1[8]={"\0"},hum_1[8]={"\0"},luz_1[8]={"\0"},presenca_1[8]={"\0"},som_1[8]={"\0"},deviceId_1[6] = {"\0"};
 char *node_id = "<16a>"; //From LG01 via web Local Channel settings on MQTT.Please refer <> dataformat in here.
 uint8_t datasend[80];
 unsigned int count = 1;
@@ -33,11 +34,10 @@ void setup() {
   }
 
 void configPin(){
-  pinMode(LIGHTPIN, INPUT);
-  pinMode(FLAMEPIN, INPUT);
-  pinMode(SOLOHPIN, INPUT);
-  pinMode(VIBRPIN, INPUT);
+  pinMode(PIRPIN, INPUT);
   pinMode(DHTPIN, INPUT);
+  pinMode(SOUNDPIN, INPUT);
+  pinMode(LIGHTPIN, INPUT);
   dht.begin();
   }
   
@@ -81,29 +81,21 @@ void dhtTempHumid()
   delay(3000);
 }
 
-void soloHSensor() 
+void valor_som() 
 {
-  soloUmi= analogRead(SOLOHPIN);
-  soloUmi = map(soloUmi,550,0,0,100);
+  som= analogRead(SOUNDPIN);
   delay(1000);
   }
 
-void valor_luz()
-{
-  luz = analogRead(LIGHTPIN);  
-  delay(1000);
-}
-
-void valor_chama()
-{
-  chama = analogRead(FLAMEPIN);
-  delay(1000);
+  void valor_luz(){
+    luz = analogRead(LIGHTPIN);
+    delay(1000);
   }
-void isVibration()
-{
-  vibracao = digitalRead(VIBRPIN);
-  delay(500);
-}
+
+void PIRSensor() {
+   presenca = digitalRead(PIRPIN);
+   delay(50);
+   }
 
 void printSerial()
 {
@@ -121,19 +113,17 @@ void printSerial()
   Serial.print("%");
   Serial.print("]");
   Serial.println("");
-  Serial.print("Umidade do Solo : ");
-  Serial.print(soloUmi);
+  Serial.print("valor som: ");
+  Serial.print(som);
   Serial.println("%");
   Serial.print("valor luz: ");
   Serial.println(luz);
-  Serial.print("valor chama: ");
-  Serial.println(chama);
-  if (vibracao == 1) {
-    vibra=1;
-    Serial.println("Vibracao: SIM ");
-  }else if(vibracao == 0){
-    vibra=0;
-    Serial.println("Vibracao: NÃO ");
+  if (presenca == HIGH) {
+    presenca=1;
+    Serial.println("Presenca: SIM ");
+  }else if(presenca == LOW){
+    presenca=0;
+    Serial.println("Presenca: NÃO ");
 }
   }
 
@@ -147,10 +137,9 @@ void sensorWrite()
     }
     dtostrf(temp,0,1,tem_1);
     dtostrf(humid,0,1,hum_1);
-    dtostrf(chama,0,1,chama_1);
+    dtostrf(som,0,1,som_1);
     dtostrf(luz,0,1,luz_1);
-    dtostrf(soloUmi,0,1,umidadeSolo_1);
-    itoa(vibra,vibracao_1,5);
+    itoa(presenca,presenca_1,5);
     itoa(deviceId,deviceId_1,5);
     /*tmp, umd, xma, sonic
      * pld -> payload
@@ -164,9 +153,8 @@ void sensorWrite()
     Serial.println("debugInicial:");
     Serial.println(tem_1);
     Serial.println(hum_1);
-    Serial.println(chama_1);
-    Serial.println(vibracao_1);
-    Serial.println(umidadeSolo_1);
+    Serial.println(som_1);
+    Serial.println(presenca_1);
     Serial.println(luz_1);
      strcat(data,"{\"pld\":");
      strcat(data,"{\"i\":");
@@ -175,12 +163,10 @@ void sensorWrite()
      strcat(data,tem_1);
      strcat(data,",\"u\":");
      strcat(data,hum_1);
-     strcat(data,",\"f\":");
-     strcat(data,chama_1);
-     strcat(data,",\"v\":");
-     strcat(data,vibracao_1);
-     strcat(data,",\"o\":");
-     strcat(data,umidadeSolo_1);
+     strcat(data,",\"s\":");
+     strcat(data,som_1);
+     strcat(data,",\"p\":");
+     strcat(data,presenca_1);
      strcat(data,",\"l\":");
      strcat(data,luz_1);
      strcat(data,"}}");
