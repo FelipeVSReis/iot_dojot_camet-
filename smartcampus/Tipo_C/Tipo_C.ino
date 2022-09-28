@@ -1,3 +1,25 @@
+/**
+ * Código para os endnodes que realizarão as coletas na UFPA Cametá/Tocantins.
+ * São 4 tipos diferentes para 7 dispositivos.
+ * Biblioteca de siglas por coleta de sensores;
+ *  tmp, umd, xma, sonic
+ * pld -> payload
+ * i -> id da dojot
+ * t -> temperatura
+ * u -> umidade
+ * l -> luminosidade
+ * o -> umidadeSolo
+ * v -> vibração
+ * p -> presença (PIR)
+ * f -> chama
+ * s -> som
+ * a -> gás álcool (MQ-3)
+ * m -> gás metano (MQ-4)
+ * g -> gás GLP  (MQ-5)
+ * c -> gás Monóxido de Carbono (MQ-9)
+ * x -> gás tóxico  (MQ-135)
+ */
+
 #include <SPI.h>
 #include <RH_RF95.h>
 #include "DHT.h"
@@ -135,7 +157,7 @@ void sensorWrite()
     dtostrf(mq4,0,1,mq4_1);
     dtostrf(mq9,0,1,mq9_1);
     dtostrf(mq135,0,1,mq135_1);
-    itoa(deviceId,deviceId_1,5);
+    itoa(deviceId,deviceId_1,10);
     Serial.println("debugInicial:");
     Serial.println(tem_1);
     Serial.println(umi_1);

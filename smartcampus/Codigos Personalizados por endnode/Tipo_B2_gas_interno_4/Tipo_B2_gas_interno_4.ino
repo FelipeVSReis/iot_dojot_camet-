@@ -1,57 +1,30 @@
-/**
- * Código para os endnodes que realizarão as coletas na UFPA Cametá/Tocantins.
- * São 4 tipos diferentes para 7 dispositivos.
- * Biblioteca de siglas por coleta de sensores;
- *  tmp, umd, xma, sonic
- * pld -> payload
- * i -> id da dojot
- * t -> temperatura
- * u -> umidade
- * l -> luminosidade
- * o -> umidadeSolo
- * v -> vibração
- * p -> presença (PIR)
- * f -> chama
- * s -> som
- * a -> gás álcool (MQ-3)
- * m -> gás metano (MQ-4)
- * g -> gás GLP  (MQ-5)
- * c -> gás Monóxido de Carbono (MQ-9)
- * x -> gás tóxico  (MQ-135)
- */
 #include <SPI.h>
 #include <RH_RF95.h>
 #include "DHT.h"
-#define DHTTYPE DHT11   // DHT 11
+#define DHTTYPE DHT11   
 
-//Variáveis
-
-int MQ5PIN = A0;
 int DHTPIN = A1;
 int SOUNDPIN = A2;
+int MQ5PIN = A0;
 int MQ3PIN = A3;
 
-
-//Tipo B id 3
-int deviceId = 3;
+int deviceId = 4;
 boolean vibracao;
 float sound,mq5,mq3,temp,umi;
 char tem_1[8]={"\0"},umi_1[8]={"\0"},mq5_1[8]={"\0"},mq3_1[8]={"\0"},sound_1[8]={"\0"},deviceId_1[6] = {"\0"};
-char *node_id = "<16a>"; //From LG01 via web Local Channel settings on MQTT.Please refer <> dataformat in here.
+char *node_id = "<16a>";
 uint8_t datasend[80];
 unsigned int count = 1;
 
-DHT dht(DHTPIN, DHTTYPE); //Inicia Biblioteca
+DHT dht(DHTPIN, DHTTYPE); 
 
-/** Variáveis LoRa**/
 RH_RF95 rf95;
 float frequency = 915.0;
 
 void setup() {
   Serial.begin(9600);
   Serial.println("MQ3 and MQ5 is warming up");
-  delay(120000);  //2 min warm up time
-  //while (!Serial) ; // Wait for serial port to be available
+  delay(120000);  
   configPin();
   configLoRa();
   }
@@ -68,16 +41,10 @@ void configPin(){
     Serial.println("Start Setup LoRa Client");
   if (!rf95.init())
     Serial.println("init failed");
-  // Setup ISM frequency
   rf95.setFrequency(frequency);
-  // Setup Power,dBm
   rf95.setTxPower(13);
-  // Setup Spreading Factor (6 ~ 12)
    rf95.setSpreadingFactor(7);
-  // Setup BandWidth, option: 7800,10400,15600,20800,31250,41700,62500,125000,250000,500000
-  //Lower BandWidth for longer distance.
   rf95.setSignalBandwidth(125000);
-  // Setup Coding Rate:5(4/5),6(4/6),7(4/7),8(4/8) 
   rf95.setCodingRate4(5);
   rf95.setSyncWord(0x34);
 }
@@ -87,11 +54,8 @@ void loop() {
   valor_som();
   valor_glp();
   valor_alcool();
-  //Debug para visualizar dados coletados na porta serial;
   printSerial();
-  //Manipulação dos dados coletados para envio via LoRa;
   sensorWrite();
-  //Envio de fato dos dados utilizando LoRa;
   SendData();
 }
 
@@ -159,7 +123,7 @@ void sensorWrite()
     dtostrf(sound,0,1,sound_1);
     dtostrf(mq3,0,1,mq3_1);
     dtostrf(mq5,0,1,mq5_1);
-    itoa(deviceId,deviceId_1,10);
+    ltoa(deviceId,deviceId_1,10);
     Serial.println("debugInicial:");
     Serial.println(tem_1);
     Serial.println(umi_1);
@@ -191,14 +155,13 @@ void SendData()
 {
   Serial.println(F("Sending data to LG01"));
       rf95.send((char *)datasend,sizeof(datasend));  
-      rf95.waitPacketSent();  // Now wait for a reply
+      rf95.waitPacketSent();
     
       uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
       uint8_t len = sizeof(buf);
 
      if (rf95.waitAvailableTimeout(3000))
   { 
-    // Should be a reply message for us now   
     if (rf95.recv(buf, &len))
    {
      
