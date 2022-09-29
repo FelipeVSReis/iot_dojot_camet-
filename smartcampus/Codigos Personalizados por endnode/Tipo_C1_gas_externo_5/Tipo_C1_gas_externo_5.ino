@@ -3,10 +3,10 @@
 #include "DHT.h"
 #define DHTTYPE DHT11
 
-int DHTPIN = A1;
 int MQ135PIN = A0;
-int MQ9PIN = A1;
-int MQ4PIN = A2;
+int DHTPIN = A1;
+int MQ9PIN = A2;
+int MQ4PIN = A3;
 
 int deviceId = 5;
 
@@ -24,7 +24,7 @@ float frequency = 915.0;
 void setup()
 {
   Serial.begin(9600);
-  Serial.println("MQ3 and MQ5 is warming up");
+  Serial.println("MQ4, MQ9 and MQ135 are warming up");
   delay(120000);
   configPin();
   configLoRa();
@@ -125,13 +125,13 @@ void sensorWrite()
   dtostrf(mq4, 0, 1, mq4_1);
   dtostrf(mq9, 0, 1, mq9_1);
   dtostrf(mq135, 0, 1, mq135_1);
-  itoa(deviceId, deviceId_1, 10);
-  Serial.println("debugInicial:");
-  Serial.println(tem_1);
-  Serial.println(umi_1);
-  Serial.println(mq4_1);
-  Serial.println(mq9_1);
-  Serial.println(mq135_1);
+  ltoa(deviceId, deviceId_1, 10);
+  //Serial.println("debugInicial:");
+  //Serial.println(tem_1);
+  //Serial.println(umi_1);
+  //Serial.println(mq4_1);
+  //Serial.println(mq9_1);
+  //Serial.println(mq135_1);
   strcat(data, "{\"pld\":");
   strcat(data, "{\"i\":");
   strcat(data, deviceId_1);
@@ -140,7 +140,7 @@ void sensorWrite()
   strcat(data, ",\"u\":");
   strcat(data, umi_1);
   strcat(data, ",\"m\":");
-  strcat(data, mq_4);
+  strcat(data, mq4_1);
   strcat(data, ",\"c\":");
   strcat(data, mq9_1);
   strcat(data, ",\"x\":");

@@ -1,17 +1,17 @@
 #include <SPI.h>
 #include <RH_RF95.h>
 #include "DHT.h"
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 
 int PIRPIN = 4;
-int DHTPIN = A1;
 int SOUNDPIN = A0;
+int DHTPIN = A1;
 int LIGHTPIN = A2;
 
-int deviceId = 7;
+int deviceId = 6;
 
-float temp, humid, presenca, som, luz;
-char tem_1[8] = {"\0"}, hum_1[8] = {"\0"}, luz_1[8] = {"\0"}, presenca_1[8] = {"\0"}, som_1[8] = {"\0"}, deviceId_1[6] = {"\0"};
+float temp, umi, pir, som, luz;
+char tem_1[8] = {"\0"}, umi_1[8] = {"\0"}, luz_1[8] = {"\0"}, pir_1[8] = {"\0"}, som_1[8] = {"\0"}, deviceId_1[6] = {"\0"};
 char *node_id = "<16a>";
 uint8_t datasend[80];
 unsigned int count = 1;
@@ -53,10 +53,9 @@ void configLoRa()
 void loop()
 {
   dhtTempHumid();
-  valor_chama();
-  isVibration();
-  soloHSensor();
   valor_luz();
+  valor_som();
+  PIRSensor();
   printSerial();
   sensorWrite();
   SendData();
@@ -65,7 +64,7 @@ void loop()
 void dhtTempHumid()
 {
   temp = dht.readTemperature();
-  humid = dht.readHumidity();
+  umi = dht.readHumidity();
   delay(3000);
 }
 
@@ -83,7 +82,7 @@ void valor_luz()
 
 void PIRSensor()
 {
-  presenca = digitalRead(PIRPIN);
+  pir = digitalRead(PIRPIN);
   delay(50);
 }
 
@@ -99,25 +98,16 @@ void printSerial()
   Serial.print(temp);
   Serial.print("℃");
   Serial.print(",");
-  Serial.print(humid);
+  Serial.print(umi);
   Serial.print("%");
   Serial.print("]");
   Serial.println("");
   Serial.print("valor som: ");
   Serial.print(som);
-  Serial.println("%");
   Serial.print("valor luz: ");
   Serial.println(luz);
-  if (presenca == HIGH)
-  {
-    presenca = 1;
-    Serial.println("Presenca: SIM ");
-  }
-  else if (presenca == LOW)
-  {
-    presenca = 0;
-    Serial.println("Presenca: NÃO ");
-  }
+  Serial.print("valor PIR (Presenca): ");
+  Serial.println(pir);
 }
 
 void sensorWrite()
@@ -129,28 +119,28 @@ void sensorWrite()
     data[i] = node_id[i];
   }
   dtostrf(temp, 0, 1, tem_1);
-  dtostrf(humid, 0, 1, hum_1);
+  dtostrf(umi, 0, 1, umi_1);
   dtostrf(som, 0, 1, som_1);
   dtostrf(luz, 0, 1, luz_1);
-  itoa(presenca, presenca_1, 10);
-  itoa(deviceId, deviceId_1, 10);
-  Serial.println("debugInicial:");
-  Serial.println(tem_1);
-  Serial.println(hum_1);
-  Serial.println(som_1);
-  Serial.println(presenca_1);
-  Serial.println(luz_1);
+  dtostrf(pir, 0, 1, pir_1);
+  ltoa(deviceId, deviceId_1, 10);
+  // Serial.println("debugInicial:");
+  // Serial.println(tem_1);
+  // Serial.println(umi_1);
+  // Serial.println(som_1);
+  // Serial.println(presenca_1);
+  // Serial.println(luz_1);
   strcat(data, "{\"pld\":");
   strcat(data, "{\"i\":");
   strcat(data, deviceId_1);
   strcat(data, ",\"t\":");
   strcat(data, tem_1);
   strcat(data, ",\"u\":");
-  strcat(data, hum_1);
+  strcat(data, umi_1);
   strcat(data, ",\"s\":");
   strcat(data, som_1);
   strcat(data, ",\"p\":");
-  strcat(data, presenca_1);
+  strcat(data, pir_1);
   strcat(data, ",\"l\":");
   strcat(data, luz_1);
   strcat(data, "}}");

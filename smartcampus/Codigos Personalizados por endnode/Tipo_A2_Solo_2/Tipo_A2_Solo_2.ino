@@ -4,14 +4,15 @@
 #define DHTTYPE DHT11
 
 int DHTPIN = A1;
-int MQ135PIN = A0;
-int MQ9PIN = A1;
-int MQ4PIN = A2;
+int LIGHTPIN = 0;
+int FLAMEPIN = 1;
+int VIBRPIN = 3;
+int SOLOHPIN = 4;
 
-int deviceId = 6;
+int deviceId = 2;
 
-float mq4, mq9, mq135, temp, umi;
-char tem_1[8] = {"\0"}, umi_1[8] = {"\0"}, mq4_1[8] = {"\0"}, mq9_1[8] = {"\0"}, mq135_1[8] = {"\0"}, deviceId_1[6] = {"\0"};
+float temp, humid, luz, chama, soloUmi, vibra;
+char tem_1[8] = {"\0"}, hum_1[8] = {"\0"}, luz_1[8] = {"\0"}, chama_1[8] = {"\0"}, umidadeSolo_1[8] = {"\0"}, vibracao_1[8] = {"\0"}, deviceId_1[6] = {"\0"};
 char *node_id = "<16a>";
 uint8_t datasend[80];
 unsigned int count = 1;
@@ -24,17 +25,16 @@ float frequency = 915.0;
 void setup()
 {
   Serial.begin(9600);
-  Serial.println("MQ3 and MQ5 is warming up");
-  delay(120000);
   configPin();
   configLoRa();
 }
 
 void configPin()
 {
-  pinMode(MQ4PIN, INPUT);
-  pinMode(MQ9PIN, INPUT);
-  pinMode(MQ135PIN, INPUT);
+  pinMode(LIGHTPIN, INPUT);
+  pinMode(FLAMEPIN, INPUT);
+  pinMode(SOLOHPIN, INPUT);
+  pinMode(VIBRPIN, INPUT);
   pinMode(DHTPIN, INPUT);
   dht.begin();
 }
@@ -55,9 +55,10 @@ void configLoRa()
 void loop()
 {
   dhtTempHumid();
-  valor_metano();
-  valor_CO();
-  valor_toxico();
+  valor_chama();
+  isVibration();
+  soloHSensor();
+  valor_luz();
   printSerial();
   sensorWrite();
   SendData();
@@ -66,26 +67,32 @@ void loop()
 void dhtTempHumid()
 {
   temp = dht.readTemperature();
-  umi = dht.readHumidity();
+  humid = dht.readHumidity();
   delay(3000);
 }
 
-void valor_metano()
+void soloHSensor()
 {
-  mq4 = analogRead(MQ4PIN);
+  soloUmi = analogRead(SOLOHPIN);
+  soloUmi = map(soloUmi, 550, 0, 0, 100);
   delay(1000);
 }
 
-void valor_CO()
+void valor_luz()
 {
-  mq9 = analogRead(MQ9PIN);
+  luz = analogRead(LIGHTPIN);
   delay(1000);
 }
 
-void valor_toxico()
+void valor_chama()
 {
-  mq135 = analogRead(MQ135PIN);
+  chama = analogRead(FLAMEPIN);
   delay(1000);
+}
+void isVibration()
+{
+  vibra = analogRead(VIBRPIN);
+  delay(500);
 }
 
 void printSerial()
@@ -100,16 +107,19 @@ void printSerial()
   Serial.print(temp);
   Serial.print("℃");
   Serial.print(",");
-  Serial.print(umi);
+  Serial.print(humid);
   Serial.print("%");
   Serial.print("]");
   Serial.println("");
-  Serial.print("Metano: ");
-  Serial.print(mq4);
-  Serial.print("CO: ");
-  Serial.println(mq9);
-  Serial.print("Gases Tóxicos: ");
-  Serial.println(mq135);
+  Serial.print("Umidade do Solo : ");
+  Serial.print(soloUmi);
+  Serial.println("%");
+  Serial.print("valor luz: ");
+  Serial.println(luz);
+  Serial.print("valor chama: ");
+  Serial.println(chama);
+  Serial.println("valor vibracao: ");
+  Serial.println(vibra);
 }
 
 void sensorWrite()
@@ -121,30 +131,34 @@ void sensorWrite()
     data[i] = node_id[i];
   }
   dtostrf(temp, 0, 1, tem_1);
-  dtostrf(umi, 0, 1, umi_1);
-  dtostrf(mq4, 0, 1, mq4_1);
-  dtostrf(mq9, 0, 1, mq9_1);
-  dtostrf(mq135, 0, 1, mq135_1);
-  itoa(deviceId, deviceId_1, 10);
-  Serial.println("debugInicial:");
-  Serial.println(tem_1);
-  Serial.println(umi_1);
-  Serial.println(mq4_1);
-  Serial.println(mq9_1);
-  Serial.println(mq135_1);
+  dtostrf(humid, 0, 1, hum_1);
+  dtostrf(chama, 0, 1, chama_1);
+  dtostrf(luz, 0, 1, luz_1);
+  dtostrf(soloUmi, 0, 1, umidadeSolo_1);
+  dtostrf(vibra,0,1,vibracao_1);
+  ltoa(deviceId, deviceId_1, 10);
+  //Serial.println("debugInicial:");
+  //Serial.println(tem_1);
+  //Serial.println(hum_1);
+  //Serial.println(chama_1);
+  //Serial.println(vibracao_1);
+  //Serial.println(umidadeSolo_1);
+  //Serial.println(luz_1);
   strcat(data, "{\"pld\":");
   strcat(data, "{\"i\":");
   strcat(data, deviceId_1);
   strcat(data, ",\"t\":");
   strcat(data, tem_1);
   strcat(data, ",\"u\":");
-  strcat(data, umi_1);
-  strcat(data, ",\"m\":");
-  strcat(data, mq_4);
-  strcat(data, ",\"c\":");
-  strcat(data, mq9_1);
-  strcat(data, ",\"x\":");
-  strcat(data, mq135_1);
+  strcat(data, hum_1);
+  strcat(data, ",\"f\":");
+  strcat(data, chama_1);
+  strcat(data, ",\"v\":");
+  strcat(data, vibracao_1);
+  strcat(data, ",\"o\":");
+  strcat(data, umidadeSolo_1);
+  strcat(data, ",\"l\":");
+  strcat(data, luz_1);
   strcat(data, "}}");
   strcpy((char *)datasend, data);
 
@@ -182,4 +196,5 @@ void SendData()
     Serial.println("No reply, is LoRa server running?");
   }
   delay(5000);
+  Serial.println();
 }
