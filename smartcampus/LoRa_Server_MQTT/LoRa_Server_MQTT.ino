@@ -1,13 +1,3 @@
-/*
-  Private LoRa protocol example :
-  Support Devices: LG01 Single Channel LoRa Gateway
-  This sketch is running in LG01. LG01 with firmware version v4.3.3 or above
-  Example sketch shows how to get sensor data from remote LoRa Sensor and Store the data into LG01. 
-  The LG01 has daemon script to check the data periodically and update the data to IoT server. 
-  The LoRa Protocol use here is private LoRa protocol which base on RadioHead Library. 
-  Created 26 March 2018
-  by Dragino Tech <support@dragino.com>
-*/
 #define BAUDRATE 115200
 #include <Console.h>
 #include <SPI.h>
@@ -15,24 +5,22 @@
 #include <Process.h>
 #include <FileIO.h>
 
+
 RH_RF95 rf95;  // Singleton instance of the radio driver
-const String Sketch_Ver = "smart_campus_cameta";
+const String Sketch_Ver = "sem_rssi";
 static unsigned long newtime; 
-static uint8_t packet[80];
+static uint8_t packet[64];
 int data_pos;
 boolean data_format=false;
 const long sendpkt_interval = 10000;  // 10 seconds for replay.
-int debug = 1;
+int debug = 0;
 int SF,Denominator;
 long SBW;
 uint32_t freq;
-char rssi_1[8];
 char cr1[2];
 char sbw1[2];
 char sf1[3];
 char fre1[9];
-
-float frequency = 915.0;
 
 void setup() 
 {
@@ -43,13 +31,13 @@ void setup()
   
    if (!rf95.init())
         Console.println("init failed");
-        rf95.setFrequency(frequency);
+        rf95.setFrequency((double)freq/1000000);
         rf95.setTxPower(13);
         rf95.setSpreadingFactor(SF);
         rf95.setSignalBandwidth(SBW);
         rf95.setCodingRate4(Denominator);
         rf95.setSyncWord(0x34);
-        show_config();    //LG01 configure be shown
+       // show_config();    //LG01 configure be shown
         writeVersion();
         Console.print(F("Sketch Version:"));
         Console.println(Sketch_Ver);
@@ -68,8 +56,6 @@ void ReceiveData()
     // Should be a message for us now   
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
-   // int rssi = 0;
-    //char rssiJSON[50] = "\0";
    
     if (rf95.recv(buf, &len))
     {
@@ -79,8 +65,8 @@ void ReceiveData()
            Console.print((char*)buf);
            Console.print(F("RSSI: "));
            Console.println(rf95.lastRssi(), DEC);
-           //rssi = (rf95.lastRssi(),DEC);
          }
+         int rssi = rf95.lastRssi();
          for (int i = 0; i < len-5; i++)
          {
           if(debug > 0){
@@ -92,7 +78,7 @@ void ReceiveData()
       uint8_t data[80] = {'\0'};
       char id[8] =  {'\0'};
       int i;
-        if (buf[0] == 0x3C)   // Only process if data is start with {
+        if (buf[0] == 0x3C)   // Only process if data is start with <
         {
           for (i = 0; i < len; i++)
           {
@@ -119,21 +105,27 @@ void ReceiveData()
           }
 
       Console.println(id1);
-      Console.println(" ");
       Console.println((char*)data);          
       rf95.send(data, sizeof(data));
       rf95.waitPacketSent();
-        Console.println(F("Sent a reply to Node and update data to IoT Server."));
-        //dtostrf(rssi,0,1,rssi_1);
-        //strcat(rssiJSON,"{\"rssi\":");
-        //strcat(rssiJSON,rssi_1);
-        //strcat(rssiJSON,"}");
+      Console.println(F("Sent a reply to Node and update data to IoT Server."));
+      //Console.println(("===================================================="));
+     //String content = (char*)data;
+     //content = content.substring(0,(content.length()-2));
+     //content.concat(",\"rssi\":");
+     //content.concat(rssi);
+     //content.concat("}}");
+     //int content_len = content.length() + 1;
+     //char content_array[content_len];
+     //content.toCharArray(content_array, content_len);
+     //Console.println(id1);
+     //Console.println(content_array);
            
      Process p;
      p.begin("store_data");
      p.addParameter(id1);
      p.addParameter(data);  
-     p.run();
+     p.run();    
     }
     else
     {
